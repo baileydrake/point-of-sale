@@ -18,7 +18,8 @@ def main_menu
   puts "Press 'a' to Add a new Product",
        "Press 'c' to Add a new Cashier",
        "Press 's' to Add a Sale",
-       "Press 'r' to See the receipt"
+       "Press 'd' for Sales per Dates",
+       "Press 'e' to see a cashiers efficiency",
        "Press 'x' to exit"
   choice = gets.chomp.downcase
 
@@ -29,8 +30,10 @@ def main_menu
     add_cashier
   when 's'
     add_sale
-  when 'r'
-    see_receipt
+  when 'd'
+    sale_date
+  when 'e'
+    cashiers_date
   when 'x'
     puts "Goodbye!"
   else
@@ -59,8 +62,6 @@ end
 
 def add_sale
   x = false
-  total = []
-  q = []
   puts "What is your name?"
   cashier = gets.chomp
   cashier = Cashier.where(:name => cashier).pop
@@ -79,26 +80,42 @@ def add_sale
       new_cart.save
     end
   end
-  sale.products.each { |product| total << product.price.to_f }
-  Cart.where(:sale_id =>sale).each { |i| q << i.quantity }
-  receipt = []
-  i = 0
-  until i == total.length
-    receipt << total[i] * q[i]
-    i += 1
+  cost_of_products = 0
+  sale.carts.each do |cart|
+    cost_of_products += cart.quantity * cart.product.price
   end
-  binding.pry
-  puts receipt.reduce(:+)
-
-
-
-  # in carts where sale = sale.id get price for product and times by qunatity
-
-  # price = new_cart.product.price
-  # puts "Your total is: $#{price}."
+  puts "Your toal is: #{cost_of_products}"
+  Sale.update(sale.id, :total => cost_of_products)
+  sale.products.each { |product| puts "#{product.name}  $#{product.price}" }
 
   main_menu
 end
+
+def sale_date
+  puts "Between what two dates do you want to see the sales for?"
+  date = gets.chomp
+  date = date.split(" and ")
+  date_carts = Cart.where(:created_at => date[0]..date[1])
+  cost_of_products = 0
+  date_carts.each do |cart|
+    cost_of_products += cart.quantity * cart.product.price
+  end
+  puts "Total Sales for date range is $#{cost_of_products}"
+  main_menu
+end
+
+def cashiers_date
+  puts "Between what two dates do you want to see the cashier's activity for?"
+  date = gets.chomp
+  date = date.split(" and ")
+  puts "And which cashier are you inquiring into?"
+  cashier = gets.chomp
+  cashier = Cashier.where(:name => cashier).pop
+  date_cashiers = Sale.where(:created_at => date[0]..date[1], :cashier_id => cashier.id)
+  puts "Total Sales for #{cashier.name} is #{date_cashiers.length}"
+  main_menu
+end
+
 
 
 

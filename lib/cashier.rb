@@ -1,3 +1,3 @@
 class Cashier < ActiveRecord::Base
-    has_many :customers
+    has_many :sales
 end
